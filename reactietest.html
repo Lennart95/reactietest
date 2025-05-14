@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reactietest Pijltjes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      margin: 0;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #fixation {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
+      opacity: 0.7;
+    }
+
+    .arrow-row {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 30px;
+      font-size: 80px;
+    }
+
+    .arrow {
+      width: 80px;
+      height: 100px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #info, #result {
+      font-size: 18px;
+      margin-top: 15px;
+      text-align: center;
+      max-width: 90%;
+      z-index: 2;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+      cursor: pointer;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="startText">Reactietest: Pijltoets (20 pogingen)</h1>
+
+  <!-- Fixatiepunt -->
+  <div id="fixation">+</div>
+
+  <!-- Pijlenrij -->
+  <div class="arrow-row" id="arrowRow">
+    <div class="arrow" id="a0"></div>
+    <div class="arrow" id="a1"></div>
+    <div class="arrow" id="a2"></div>
+    <div class="arrow" id="a3"></div>
+    <div class="arrow" id="a4"></div>
+  </div>
+
+  <div id="info">Druk op de juiste pijl zodra de middelste verschijnt.</div>
+  <div id="result"></div>
+  <button id="restartBtn" onclick="startTest()">Start (opnieuw)</button>
+
+  <script>
+    const validKeys = {
+      "ArrowLeft": "ArrowLeft",
+      "ControlLeft": "ArrowLeft",
+      "ArrowRight": "ArrowRight",
+      "ControlRight": "ArrowRight"
+};
+
+    const arrows = ["ArrowLeft", "ArrowRight"];
+    const arrowSymbols = {
+      "ArrowLeft": "⬅️",
+      "ArrowRight": "➡️"
+    };
+
+    const arrowEls = [
+      document.getElementById("a0"),
+      document.getElementById("a1"),
+      document.getElementById("a2"), // middelste
+      document.getElementById("a3"),
+      document.getElementById("a4")
+    ];
+
+    const rowEl = document.getElementById("arrowRow");
+    const infoEl = document.getElementById("info");
+    const resultEl = document.getElementById("result");
+
+    let currentTarget = "";
+    let startTime = 0;
+    let active = false;
+    let tries = 0;
+    const maxTries = 20;
+    const times = [];
+    const errors = [];
+
+    function randomArrow() {
+      return arrows[Math.floor(Math.random() * arrows.length)];
+    }
+
+    function setArrowRowPosition() {
+      // Kies willekeurig 25% of 75% van schermhoogte
+      const height = window.innerHeight;
+      const position = Math.random() < 0.5 ? height * 0.25 : height * 0.75;
+      rowEl.style.top = `${position}px`;
+    }
+
+    function showArrows() {
+      if (tries >= maxTries) {
+        finishTest();
+        return;
+      }
+
+      setArrowRowPosition();
+
+      for (let i = 0; i < 5; i++) {
+        const dir = randomArrow();
+        arrowEls[i].textContent = arrowSymbols[dir];
+        if (i === 2) currentTarget = dir; // middelste telt
+      }
+
+      startTime = performance.now();
+      active = true;
+      infoEl.textContent = `Pijl ${tries + 1} van ${maxTries}`;
+    }
+
+    function clearArrows() {
+      arrowEls.forEach(el => el.textContent = "");
+      active = false;
+    }
+
+    // function finishTest() {
+    //   const validTimes = times.filter(t => t !== null);
+    //   const avg = validTimes.length > 0
+    //     ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length
+    //     : 0;
+
+    //   const correct = validTimes.length;
+    //   const incorrect = errors.length;
+
+    //   infoEl.textContent = `Test voltooid!`;
+    //   resultEl.innerHTML = `
+    //     Gemiddelde reactietijd (correct): ${Math.round(avg)} ms<br>
+    //     Aantal correcte antwoorden: ${correct}<br>
+    //     Aantal foute antwoorden: ${incorrect}<br>
+    //     Reactietijden: ${validTimes.map(t => `${Math.round(t)}ms`).join(", ")}<br>
+    //     Fouten:<br> ${errors.join("<br>")}
+    //   `;
+    //   clearArrows();
+    // }
+
+    function startTest() {
+      tries = 0;
+      times.length = 0;
+      errors.length = 0;
+      resultEl.textContent = "";
+      infoEl.classList.add("hidden");           // verberg instructietekst
+      document.getElementById("restartBtn").classList.add("hidden"); // verberg knop
+      document.getElementById("startText").classList.add("hidden");
+      clearArrows();
+      setTimeout(showArrows, 1000 + Math.random() * 2000);
+    }
+
+    function finishTest() {
+      const validTimes = times.filter(t => t !== null);
+      const avg = validTimes.length > 0
+        ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length
+        : 0;
+
+      const correct = validTimes.length;
+      const incorrect = errors.length;
+
+      infoEl.textContent = `Test voltooid!`;
+      infoEl.classList.remove("hidden");
+      resultEl.innerHTML = `
+        Gemiddelde reactietijd (correct): ${Math.round(avg)} ms<br>
+        Aantal correcte antwoorden: ${correct}<br>
+        Aantal foute antwoorden: ${incorrect}<br>
+        Reactietijden: ${validTimes.map(t => `${Math.round(t)}ms`).join(", ")}<br>
+        Fouten:<br> ${errors.join("<br>")}
+      `;
+      document.getElementById("restartBtn").classList.remove("hidden"); // toon knop
+      document.getElementById("startText").classList.remove("hidden");
+      clearArrows();
+    }
+
+
+
+    document.addEventListener("keydown", (e) => {
+      if (!active || !(e.code in validKeys)) return;
+
+      const pressed = validKeys[e.code];
+      const isCorrect = pressed === currentTarget;
+
+      active = false;
+      clearArrows();
+
+      if (isCorrect) {
+        const reactionTime = performance.now() - startTime;
+        times.push(reactionTime);
+      } else {
+        times.push(null);
+        errors.push(`Poging ${tries + 1}: verkeerde toets (${e.key === "ArrowLeft" ? "←" : "→"}) i.p.v. ${currentTarget === "ArrowLeft" ? "←" : "→"}`);
+      }
+
+      tries++;
+      setTimeout(showArrows, 1000 + Math.random() * 1500);
+    });
+
+    // startTest();
+  </script>
+</body>
+</html>
